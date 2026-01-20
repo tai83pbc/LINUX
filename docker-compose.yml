@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: platform
+      MYSQL_USER: skymaster
+      MYSQL_PASSWORD: skymaster
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  app:
+    image: skymaster-hub:1.0
+    container_name: skymaster-hub
+    depends_on:
+      - mysql
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/platform
+      SPRING_DATASOURCE_USERNAME: skymaster
+      SPRING_DATASOURCE_PASSWORD: skymaster
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

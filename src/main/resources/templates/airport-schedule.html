@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Flight Schedules</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✈️ Flight Schedule Search</h1>
+        <p class="subtitle">Find flights by airport and country</p>
+
+        <div class="search-section">
+            <div class="form-group">
+                <label for="countrySelect">Select Country</label>
+                <select id="countrySelect">
+                    <option value="">-- Choose Country --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="airportSelect">Select Airport (City)</label>
+                <select id="airportSelect" disabled>
+                    <option value="">-- Choose Airport --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="scheduleType">Schedule Type</label>
+                <select id="scheduleType">
+                    <option value="departure">Departures</option>
+                    <option value="arrival">Arrivals</option>
+                </select>
+            </div>
+
+            <button onclick="searchSchedules()">Search Flights</button>
+        </div>
+
+        <div id="errorMessage" class="error"></div>
+        <div id="successMessage" class="success"></div>
+
+        <div id="loadingSection" class="loading">
+            <div class="spinner"></div>
+            <p>Loading flight schedules...</p>
+        </div>
+
+        <div id="resultsSection" class="results-section">
+            <div class="results-header">
+                <h2>Flight Results</h2>
+                <span class="results-count"><span id="scheduleCount">0</span> flights found</span>
+            </div>
+
+            <div id="schedulesList"></div>
+        </div>
+    </div>
+
+    <script src="/js/airport-schedule.js"></script>
+</body>
+</html>

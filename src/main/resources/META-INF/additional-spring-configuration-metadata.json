@@ -1,0 +1,12 @@
+{"properties": [
+  {
+    "name": "airlab.api.key",
+    "type": "java.lang.String",
+    "description": "api key for AirLab API"
+  },
+  {
+    "name": "airlab.api.base-url",
+    "type": "java.lang.String",
+    "description": "Base URL for AirLab API"
+  }
+]}

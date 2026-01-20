@@ -1,0 +1,119 @@
+public List<FlightScheduleDTO> getSchedulesByDepartureAirport(String depIata) {
+        String cacheKey = "dep:" + depIata;
+
+        // 1. Check cache (DTO)
+        List<FlightScheduleDTO> cachedSchedules = cacheByDepIata.get(cacheKey);
+        cacheByDepIata.printAll();
+        if (cachedSchedules != null) {
+            return cachedSchedules;
+        }
+        synchronized (cacheKey.intern()) {
+            cachedSchedules = cacheByDepIata.get(cacheKey);
+            if (cachedSchedules != null) return cachedSchedules;
+
+        // gọi DB + API
+
+            // 2. Check database
+            List<FlightSchedules> schedulesFromDb = schedulesRepository.findAllByDepIata(depIata);
+            if (!schedulesFromDb.isEmpty()) {
+                List<FlightScheduleDTO> dtoList = schedulesFromDb.stream()
+                        .map(scheduleMapper::toDTO)
+                        .collect(Collectors.toList());
+
+                cacheByDepIata.put(cacheKey, dtoList);
+                return dtoList;
+            }
+
+            // 3. Call AirLab API
+            try {
+                WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
+
+                String rawResponse = webClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/schedules")
+                                .queryParam("api_key", apiKey)
+                                .queryParam("dep_iata", depIata)
+                                .queryParam("_fields",
+                                        "flight_iata,flight_icao,airline_iata,duration," +
+                                        "dep_iata,dep_icao,arr_iata,arr_icao,dep_time,arr_time")
+                                .build())
+                        .retrieve()
+                        .onStatus(
+                                status -> status.is4xxClientError() || status.is5xxServerError(),
+                                clientResponse -> clientResponse.bodyToMono(String.class)
+                                        .map(errorBody -> new AirLabApiException(
+                                                String.format("AirLab API error [%s]: %s",
+                                                        clientResponse.statusCode(), errorBody)))
+                        )
+                        .bodyToMono(String.class)
+                        .block();
+
+                if (rawResponse == null || rawResponse.isEmpty()) {
+                    throw new AirLabApiException("No data received from AirLab API");
+                }
+
+                ObjectMapper mapper = new ObjectMapper();
+                AirLabResponse<FlightScheduleDTO> response =
+                        mapper.readValue(rawResponse,
+                                new TypeReference<AirLabResponse<FlightScheduleDTO>>() {});
+
+                if (response.getError() != null && response.getError().getMessage() != null) {
+                    throw new AirLabApiException("AirLab API error: " + response.getError().getMessage());
+                }
+
+                if (response.getResponse() == null || response.getResponse().isEmpty()) {
+                    throw new AirLabApiException("No data received from AirLab API");
+                }
+
+                // 4. Filter DTO hợp lệ
+                Set<String> seen = new HashSet<>();
+
+                List<FlightScheduleDTO> dtoList = response.getResponse().stream()
+                    .filter(dto -> dto.getFlightIata() != null && !dto.getFlightIata().isBlank())
+                    .filter(dto -> {
+                        String key = dto.getFlightIata()
+                                + "|" + dto.getDepIata()
+                                + "|" + dto.getArrIata();
+                        return seen.add(key); // false nếu trùng
+                    })
+                    .collect(Collectors.toList());
+
+
+                // 5. Save/update DB
+                List<FlightSchedules> savedEntities = dtoList.stream()
+                        .map(scheduleMapper::toEntity)
+                        .map(entity -> {
+                            Optional<FlightSchedules> existing =
+                                    schedulesRepository.findByFlightIataAndDepIataAndArrIata(
+                                            entity.getFlightIata(),
+                                            entity.getDepIata(),
+                                            entity.getArrIata());
+
+                            if (existing.isPresent()) {
+                                FlightSchedules e = existing.get();
+                                e.setFlightIcao(entity.getFlightIcao());
+                                e.setDepIcao(entity.getDepIcao());
+                                e.setArrIcao(entity.getArrIcao());
+                                e.setAirlineIata(entity.getAirlineIata());
+                                e.setDepTime(entity.getDepTime());
+                                e.setArrTime(entity.getArrTime());
+                                e.setDuration(entity.getDuration());
+                                e.setFetchAt(entity.getFetchAt());
+                                return schedulesRepository.save(e);
+                            }
+                            return schedulesRepository.save(entity);
+                        })
+                        .collect(Collectors.toList());
+
+                // 6. Cache & return DTO
+                List<FlightScheduleDTO> result =
+                        savedEntities.stream().map(scheduleMapper::toDTO).collect(Collectors.toList());
+
+                cacheByDepIata.put(cacheKey, result);
+                return result;
+
+            } catch (Exception e) {
+                throw new AirLabApiException("Failed to fetch schedules from AirLab API", e);
+            }
+        }
+    }
