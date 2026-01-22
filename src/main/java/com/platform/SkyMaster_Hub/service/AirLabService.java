@@ -664,7 +664,10 @@ public class AirLabService {
     }
 
     public List<Countries> getAllCountries() {
+        List<Countries> countrys = countriesRepository.findAll();
+        if (countrys != null)
         return countriesRepository.findAll();
+        else return fetchAndSaveCountries();
     }
 
     public List<Cities> getAllCities() {
