@@ -44,23 +44,17 @@ jobs:
           CODESPACE_NAME: "sturdy-bassoon-555pw7qqgx6h74q"
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
         run: |
-          # Sử dụng lệnh SSH để điều khiển Codespace từ xa
-          # Lưu ý: EOF không để trong dấu nháy đơn để có thể truyền biến từ GitHub Secrets vào
           gh codespace ssh -c $CODESPACE_NAME << EOF
-            # 1. Kéo image mới về
             docker pull $DOCKER_USER/spring-app:latest
-            
-            # 2. Xóa container cũ nếu đang chạy
             docker stop spring-app || true
             docker rm spring-app || true
             
-            # 3. Chạy container mới với các biến môi trường khớp với application.properties
             docker run -d --name spring-app \
               -p 8080:8080 \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_PORT=${{ secrets.DB_PORT }} \
-              -e DB_NAME=${{ secrets.DB_NAME }} \
-              -e DB_USERNAME=${{ secrets.DB_USER }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e DB_HOST="${{ secrets.DB_HOST }}" \
+              -e DB_PORT="${{ secrets.DB_PORT }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
+              -e DB_USERNAME="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               $DOCKER_USER/spring-app:latest
           EOF
