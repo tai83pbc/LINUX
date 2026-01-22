@@ -41,7 +41,7 @@ jobs:
       - name: Deploy to Codespace via GH CLI
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CODESPACE_NAME: "ten-codespace-cua-ban-o-buoc-1"
+          CODESPACE_NAME: "sturdy-bassoon-555pw7qqgx6h74q"
         run: |
           # 1. Dùng GitHub CLI để gửi lệnh đến Codespace
           # Lệnh này sẽ yêu cầu Codespace pull image mới và chạy lại container
