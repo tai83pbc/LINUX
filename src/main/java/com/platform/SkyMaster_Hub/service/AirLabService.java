@@ -148,13 +148,13 @@ public class AirLabService {
 // );
 
     /////////////////////////////////////////////////////
-    public List<Airports> fetchAndSaveAirportsByCityCode(String cityCode) {
+    public List<Airports> fetchAndSaveAirportsByCountryCode(String countryCode) {
         try {
             WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
             String rawResponse = webClient.get().uri(UriBuilder -> UriBuilder
                     .path("/airports")
                     .queryParam("api_key", apiKey)
-                    .queryParam("city_code", cityCode)
+                    .queryParam("country_code", countryCode)
                     .build())
                     .retrieve()
                     .onStatus(
@@ -208,7 +208,7 @@ public class AirLabService {
                             existingAirport.setLat(airport.getLat());
                             existingAirport.setLng(airport.getLng());
                             existingAirport.setCountryCode(airport.getCountryCode());
-                            existingAirport.setCity(cityCode);
+                            existingAirport.setCity(countryCode);
                             return airportsRepository.save(existingAirport);
                         } else {
                             return airportsRepository.save(airport);
@@ -904,7 +904,14 @@ public class AirLabService {
      * Get airports by country code
      */
     public List<Airports> getAirportsByCountryCode(String countryCode) {
-        return airportsRepository.findByCountryCode(countryCode);
+        List<Airports>  airports = airportsRepository.findByCountryCode(countryCode);
+        if (airports == null || airports.isEmpty()) {
+            // DB chưa có → fetch từ AirLab và save
+            return fetchAndSaveAirportsByCountryCode(countryCode);
+        }
+
+        // DB đã có → trả về luôn
+        return airports;
     }
 
 }
