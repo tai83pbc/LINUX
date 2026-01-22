@@ -664,10 +664,15 @@ public class AirLabService {
     }
 
     public List<Countries> getAllCountries() {
-        List<Countries> countrys = countriesRepository.findAll();
-        if (countrys != null)
-        return countriesRepository.findAll();
-        else return fetchAndSaveCountries();
+        List<Countries> countries = countriesRepository.findAll();
+
+        if (countries == null || countries.isEmpty()) {
+            // DB chưa có → fetch từ AirLab và save
+            return fetchAndSaveCountries();
+        }
+
+        // DB đã có → trả về luôn
+        return countries;
     }
 
     public List<Cities> getAllCities() {
