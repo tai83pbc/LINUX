@@ -58,7 +58,7 @@ public class AirLabController {
     @GetMapping(value = "/fetch/airports", params = "city_code")
     ResponseEntity<Map<String, Object>> fetchAirportsByCityCode(@RequestParam("city_code") String cityCode) {
         try {
-            List<Airports> airports = airLabService.fetchAndSaveAirportsByCityCode(cityCode);
+            List<Airports> airports = airLabService.fetchAndSaveAirportsByCountryCode(cityCode);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Successfully fetched and saved airports");
@@ -333,7 +333,6 @@ public class AirLabController {
     public ResponseEntity<Map<String, Object>> getAirportsByCountryCode(@PathVariable String countryCode) {
         try {
             List<Airports> airports = airLabService.getAirportsByCountryCode(countryCode);
-
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Successfully retrieved airports");
             response.put("count", airports.size());
