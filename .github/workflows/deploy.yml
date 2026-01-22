@@ -42,17 +42,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CODESPACE_NAME: "sturdy-bassoon-555pw7qqgx6h74q"
+          # Định nghĩa biến để dùng trong script SSH bên dưới
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }} 
         run: |
-          # 1. Dùng GitHub CLI để gửi lệnh đến Codespace
-          # Lệnh này sẽ yêu cầu Codespace pull image mới và chạy lại container
-          gh codespace ssh -c $CODESPACE_NAME << 'EOF'
-            docker pull ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
+          # Dùng GitHub CLI để gửi lệnh đến Codespace
+          gh codespace ssh -c $CODESPACE_NAME << EOF
+            # Kéo image từ Docker Hub về Codespace
+            docker pull $DOCKER_USER/spring-app:latest
+            
+            # Dừng và xóa container cũ nếu có
             docker stop spring-app || true
             docker rm spring-app || true
+            
+            # Chạy container mới với đầy đủ biến môi trường
             docker run -d --name spring-app \
               -p 8080:8080 \
               -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_PORT=${{ secrets.DB_PORT }} \
               -e DB_USER=${{ secrets.DB_USER }} \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              your-docker-username/spring-app:latest
+              -e DB_NAME=${{ secrets.DB_NAME }} \
+              $DOCKER_USER/spring-app:latest
           EOF
