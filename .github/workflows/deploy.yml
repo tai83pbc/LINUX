@@ -24,15 +24,15 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/spring-app:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
 
   deploy:
     needs: build-and-push
@@ -46,7 +46,7 @@ jobs:
           # 1. Dùng GitHub CLI để gửi lệnh đến Codespace
           # Lệnh này sẽ yêu cầu Codespace pull image mới và chạy lại container
           gh codespace ssh -c $CODESPACE_NAME << 'EOF'
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/spring-app:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
             docker stop spring-app || true
             docker rm spring-app || true
             docker run -d --name spring-app \
