@@ -34,17 +34,21 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
 
-  deploy:
+    deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Codespace via GH CLI
+      # --- PHẦN GOOGLE IDX (ACTIVE) ---
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
+      - name: Deploy to Google IDX via Tailscale
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CODESPACE_NAME: "sturdy-bassoon-555pw7qqgx6h74q"
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
         run: |
-          gh codespace ssh -c $CODESPACE_NAME << EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.IDX_USER }}@${{ secrets.IDX_HOST }} << EOF
             docker pull $DOCKER_USER/spring-app:latest
             docker stop spring-app || true
             docker rm spring-app || true
@@ -56,5 +60,29 @@ jobs:
               -e DB_NAME="${{ secrets.DB_NAME }}" \
               -e DB_USERNAME="${{ secrets.DB_USER }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e AIRLAB_API_KEY="f98ec0f6-5b50-4afc-97af-32830a872409" \
               $DOCKER_USER/spring-app:latest
           EOF
+
+      # --- PHẦN CODESPACE (COMMENTED OUT) ---
+      # - name: Deploy to Codespace via GH CLI
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      #     CODESPACE_NAME: "sturdy-bassoon-555pw7qqgx6h74q"
+      #     DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+      #   run: |
+      #     gh codespace ssh -c $CODESPACE_NAME << EOF
+      #       docker pull $DOCKER_USER/spring-app:latest
+      #       docker stop spring-app || true
+      #       docker rm spring-app || true
+      #       
+      #       docker run -d --name spring-app \
+      #         -p 8080:8080 \
+      #         -e DB_HOST="${{ secrets.DB_HOST }}" \
+      #         -e DB_PORT="${{ secrets.DB_PORT }}" \
+      #         -e DB_NAME="${{ secrets.DB_NAME }}" \
+      #         -e DB_USERNAME="${{ secrets.DB_USER }}" \
+      #         -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+      #         $DOCKER_USER/spring-app:latest
+      #     EOF
+
