@@ -74,7 +74,7 @@ jobs:
         run: |
           gh auth setup-git
 
-          gh codespace ssh -c $CODESPACE_NAME --command "
+          gh codespace ssh -c $CODESPACE_NAME -- bash -lc "
             docker pull $DOCKER_USER/spring-app:latest &&
             docker stop spring-app || true &&
             docker rm spring-app || true &&
@@ -88,3 +88,4 @@ jobs:
               $DOCKER_USER/spring-app:latest &&
             docker ps -a
           "
+
