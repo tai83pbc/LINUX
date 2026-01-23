@@ -11,24 +11,13 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
     
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/airport-schedule.html",
-                    "/404.html",
-                    "/css/**",
-                    "/js/**",
-                    "/images/**",
-                    "/webjars/**"
-                ).permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             );
-
+        
         return http.build();
     }
-
 }
