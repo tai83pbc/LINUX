@@ -34,11 +34,10 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
 
-    deploy:
+  deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      # --- PHẦN GOOGLE IDX (ACTIVE) ---
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
@@ -52,7 +51,7 @@ jobs:
             docker pull $DOCKER_USER/spring-app:latest
             docker stop spring-app || true
             docker rm spring-app || true
-            
+
             docker run -d --name spring-app \
               -p 8080:8080 \
               -e DB_HOST="${{ secrets.DB_HOST }}" \
@@ -60,9 +59,10 @@ jobs:
               -e DB_NAME="${{ secrets.DB_NAME }}" \
               -e DB_USERNAME="${{ secrets.DB_USER }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              -e AIRLAB_API_KEY="f98ec0f6-5b50-4afc-97af-32830a872409" \
+              -e AIRLAB_API_KEY="${{ secrets.AIRLAB_API_KEY }}" \
               $DOCKER_USER/spring-app:latest
           EOF
+
 
       # --- PHẦN CODESPACE (COMMENTED OUT) ---
       # - name: Deploy to Codespace via GH CLI
