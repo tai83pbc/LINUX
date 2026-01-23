@@ -67,23 +67,26 @@ jobs:
 
       # --- PHẦN CODESPACE (COMMENTED OUT) ---
       - name: Deploy to Codespace via GH CLI
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CODESPACE_NAME: "sturdy-bassoon-555pw7qqgx6h74q"
-          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
-        run: |
-          gh codespace ssh -c $CODESPACE_NAME << EOF
-            docker pull $DOCKER_USER/spring-app:latest
-            docker stop spring-app || true
-            docker rm spring-app || true
-            
-            docker run -d --name spring-app \
-              -p 8080:8080 \
-              -e DB_HOST="${{ secrets.DB_HOST }}" \
-              -e DB_PORT="${{ secrets.DB_PORT }}" \
-              -e DB_NAME="${{ secrets.DB_NAME }}" \
-              -e DB_USERNAME="${{ secrets.DB_USER }}" \
-              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              $DOCKER_USER/spring-app:latest
-          EOF
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        CODESPACE_NAME: sturdy-bassoon-555pw7qqgx6h74q
+        DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+      run: |
+        gh auth setup-git
+
+        gh codespace ssh -c $CODESPACE_NAME --command "
+          docker pull $DOCKER_USER/spring-app:latest &&
+          docker stop spring-app || true &&
+          docker rm spring-app || true &&
+          docker run -d --name spring-app \
+            -p 8080:8080 \
+            -e DB_HOST='${{ secrets.DB_HOST }}' \
+            -e DB_PORT='${{ secrets.DB_PORT }}' \
+            -e DB_NAME='${{ secrets.DB_NAME }}' \
+            -e DB_USERNAME='${{ secrets.DB_USER }}' \
+            -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            $DOCKER_USER/spring-app:latest &&
+          docker ps -a
+        "
+
 
