@@ -1,10 +1,10 @@
-
 name: CI/CD to Codespace phu
 
 on:
   push:
     branches: [ "phu" ]
 
+    
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -39,10 +39,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Connect to Tailscale
-        uses: tailscale/github-action@v2
-        with:
-          authkey: ${{ secrets.TS_AUTHKEY }}
 
       # - name: Deploy to Google IDX via Tailscale
       #   env:
@@ -69,23 +65,37 @@ jobs:
       # --- PHẦN CODESPACE (COMMENTED OUT) ---
       - name: Deploy to Codespace via GH CLI
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CODESPACE_NAME: sturdy-bassoon-555pw7qqgx6h74q
-          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+            GH_TOKEN: ${{ secrets.GH_TOKEN }}
+            CODESPACE_NAME: sturdy-bassoon-555pw7qqgx6h74q
+            DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
         run: |
-          gh auth setup-git
+            gh auth setup-git
 
-          gh codespace ssh -c $CODESPACE_NAME -- bash -lc "
-            docker pull $DOCKER_USER/spring-app-phu:latest &&
-            docker stop spring-app-phu || true &&
-            docker rm spring-app-phu || true &&
+            gh codespace ssh -c $CODESPACE_NAME -- bash -lc "
+            echo '👉 Pull image mới'
+            docker pull $DOCKER_USER/spring-app-phu:latest
+
+            echo '👉 Stop & remove container spring-app-phu (nếu có)'
+            docker stop spring-app-phu || true
+            docker rm spring-app-phu || true
+
+            echo '👉 Kill TẤT CẢ container đang chiếm port 8080'
+            docker ps --filter 'publish=8080' -q | xargs -r docker stop
+            docker ps -a --filter 'publish=8080' -q | xargs -r docker rm
+
+            echo '👉 Kill process Linux chiếm port 8080 (nếu có)'
+            sudo lsof -ti:8080 | xargs -r sudo kill -9 || true
+
+            echo '👉 Run container mới'
             docker run -d --name spring-app-phu \
-              -p 8080:8080 \
-              -e DB_HOST='${{ secrets.DB_HOST }}' \
-              -e DB_PORT='${{ secrets.DB_PORT }}' \
-              -e DB_NAME='${{ secrets.DB_NAME }}' \
-              -e DB_USERNAME='${{ secrets.DB_USER }}' \
-              -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
-              $DOCKER_USER/spring-app-phu:latest &&
-            docker ps -a
-          "
+                -p 8080:8080 \
+                -e DB_HOST='${{ secrets.DB_HOST }}' \
+                -e DB_PORT='${{ secrets.DB_PORT }}' \
+                -e DB_NAME='${{ secrets.DB_NAME }}' \
+                -e DB_USERNAME='${{ secrets.DB_USER }}' \
+                -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+                $DOCKER_USER/spring-app-phu:latest
+
+            echo '👉 Kiểm tra'
+            docker ps
+            "
